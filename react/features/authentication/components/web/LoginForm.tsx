@@ -67,7 +67,7 @@ const LoginForm = ({
             )}
 
             <Button
-                className = 'h-11 w-full rounded-full bg-rose-700 text-base font-semibold hover:bg-rose-800'
+                className = 'h-11 w-full rounded-full bg-rose-700 text-base font-medium hover:bg-rose-800'
                 disabled = { !canSubmit }
                 onClick = { onLogin }
                 type = 'button'>

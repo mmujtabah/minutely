@@ -1,64 +1,24 @@
-import React, { ChangeEvent } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { makeStyles } from 'tss-react/mui';
-
 import { isMobileBrowser } from '../../../environment/utils';
 import Icon from '../../../icons/components/Icon';
-import { IconArrowDown } from '../../../icons/svg';
+import { IconArrowDown, IconCheck } from '../../../icons/svg';
+import ContextMenu from './ContextMenu';
+import ContextMenuItem from './ContextMenuItem';
 
 interface ISelectProps {
-
-    /**
-     * Helper text to be displayed below the select.
-     */
     bottomLabel?: string;
-
-    /**
-     * Class name for additional styles.
-     */
     className?: string;
-
-    /**
-     * Class name for additional styles for container.
-     */
     containerClassName?: string;
-
-    /**
-     * Whether or not the select is disabled.
-     */
     disabled?: boolean;
-
-    /**
-     * Whether or not the select is in the error state.
-     */
     error?: boolean;
-
-    /**
-     * Id of the <select> element.
-     * Necessary for screen reader users, to link the label and error to the select.
-     */
     id: string;
-
-    /**
-     * Label to be displayed above the select.
-     */
     label?: string;
-
-    /**
-     * Change handler.
-     */
-    onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
-
-    /**
-     * The options of the select.
-     */
+    onChange: (e: any) => void;
     options: Array<{
         label: string;
         value: number | string;
     }>;
-
-    /**
-     * The value of the select.
-     */
     value: number | string;
 }
 
@@ -66,7 +26,8 @@ const useStyles = makeStyles()(theme => {
     return {
         container: {
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            position: 'relative'
         },
 
         label: {
@@ -79,11 +40,7 @@ const useStyles = makeStyles()(theme => {
             }
         },
 
-        selectContainer: {
-            position: 'relative'
-        },
-
-        select: {
+        trigger: {
             backgroundColor: theme.palette.selectBackground,
             borderRadius: `${theme.shape.borderRadius}px`,
             width: '100%',
@@ -91,42 +48,62 @@ const useStyles = makeStyles()(theme => {
             color: theme.palette.selectText,
             padding: '10px 16px',
             paddingRight: '42px',
-            border: 0,
-            appearance: 'none',
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-            textOverflow: 'ellipsis',
+            border: `1px solid ${theme.palette.ui03 || 'rgba(255,255,255,0.1)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            minHeight: '40px',
+            boxSizing: 'border-box',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
 
-            '&:focus': {
-                outline: 0,
+            '&:hover': {
+                borderColor: theme.palette.action01
+            },
+
+            '&.open': {
+                borderColor: theme.palette.action01,
                 boxShadow: `0px 0px 0px 2px ${theme.palette.selectFocus}`
             },
 
-            '&:disabled': {
-                color: theme.palette.selectDisabled
-            },
-
-            '&.is-mobile': {
-                ...theme.typography.bodyShortRegularLarge,
-                padding: '12px 16px',
-                paddingRight: '46px'
+            '&.disabled': {
+                color: theme.palette.selectDisabled,
+                cursor: 'not-allowed',
+                opacity: 0.6
             },
 
             '&.error': {
+                borderColor: theme.palette.selectError,
                 boxShadow: `0px 0px 0px 2px ${theme.palette.selectError}`
             }
         },
 
-        icon: {
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            pointerEvents: 'none',
+        valueText: {
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis'
+        },
 
-            '&.is-mobile': {
-                top: '12px',
-                right: '12px'
+        icon: {
+            transition: 'transform 0.2s',
+            '&.open': {
+                transform: 'rotate(180deg)'
             }
+        },
+
+        menu: {
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            width: '100%',
+            backgroundColor: theme.palette.overflowMenuBackground,
+            border: `1px solid ${theme.palette.overflowMenuBorder}`,
+            borderRadius: `${theme.shape.borderRadius}px`,
+            boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.4)',
+            zIndex: 1000,
+            maxHeight: '240px',
+            overflowY: 'auto',
+            padding: '4px 0'
         },
 
         bottomLabel: {
@@ -157,33 +134,80 @@ const Select = ({
     options,
     value }: ISelectProps) => {
     const { classes, cx, theme } = useStyles();
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
     const isMobile = isMobileBrowser();
 
+    const selectedOption = options.find(opt => opt.value === value) || options[0];
+
+    const toggleMenu = useCallback(() => {
+        if (!disabled) {
+            setIsOpen(!isOpen);
+        }
+    }, [isOpen, disabled]);
+
+    const onOptionClick = useCallback((optionValue: string | number) => {
+        setIsOpen(false);
+        // Mock a native change event for compatibility
+        onChange({
+            target: {
+                value: optionValue,
+                id
+            }
+        });
+    }, [onChange, id]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen]);
+
     return (
-        <div className = { cx(classes.container, containerClassName) }>
-            {label && <label
-                className = { cx(classes.label, isMobile && 'is-mobile') }
-                htmlFor = { id } >
+        <div className = { cx(classes.container, containerClassName) } ref = { containerRef }>
+            {label && <label className = { cx(classes.label, isMobile && 'is-mobile') } htmlFor = { id } >
                 {label}
             </label>}
-            <div className = { classes.selectContainer }>
-                <select
-                    aria-describedby = { bottomLabel ? `${id}-description` : undefined }
-                    className = { cx(classes.select, isMobile && 'is-mobile', className, error && 'error') }
-                    disabled = { disabled }
-                    id = { id }
-                    onChange = { onChange }
-                    value = { value }>
-                    {options.map(option => (<option
-                        key = { option.value }
-                        value = { option.value }>{option.label}</option>))}
-                </select>
+            
+            <div 
+                className = { cx(classes.trigger, isOpen && 'open', disabled && 'disabled', error && 'error', className) }
+                id = { id }
+                onClick = { toggleMenu }
+                role = "button"
+                aria-haspopup = "listbox"
+                aria-expanded = { isOpen }>
+                <span className = { classes.valueText }>
+                    {selectedOption?.label || ''}
+                </span>
                 <Icon
-                    className = { cx(classes.icon, isMobile && 'is-mobile') }
+                    className = { cx(classes.icon, isOpen && 'open') }
                     color = { disabled ? theme.palette.selectIconDisabled : theme.palette.selectIcon }
-                    size = { 22 }
+                    size = { 18 }
                     src = { IconArrowDown } />
             </div>
+
+            {isOpen && (
+                <div className = { classes.menu } role = "listbox">
+                    {options.map(option => (
+                        <ContextMenuItem
+                            accessibilityLabel = { option.label }
+                            key = { option.value }
+                            onClick = { () => onOptionClick(option.value) }
+                            selected = { option.value === value }
+                            text = { option.label } />
+                    ))}
+                </div>
+            )}
+
             {bottomLabel && (
                 <span
                     className = { cx(classes.bottomLabel, isMobile && 'is-mobile', error && 'error') }

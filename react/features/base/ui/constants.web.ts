@@ -233,7 +233,7 @@ export const commonStyles = (theme: Theme) => {
 
         '.toolbox-icon': {
             display: 'flex',
-            borderRadius: 3,
+            borderRadius: '50%',
             flexDirection: 'column' as const,
             fontSize: '1.5rem',
             height: 48,
@@ -281,7 +281,7 @@ export const commonStyles = (theme: Theme) => {
 
         '.toolbox-content-items': {
             background: theme.palette.toolboxBackground,
-            borderRadius: 6,
+            borderRadius: 9999,
             margin: '0 auto',
             padding: '6px 12px',
             textAlign: 'center' as const,

@@ -20,7 +20,7 @@ const AuthLayout = ({ children, subtitle, title }: IProps) => {
                         Minutely<span className = 'text-rose-700'>.</span>
                     </div>
                 </div>
-                <Card className = 'rounded-[2rem] border-slate-200/80 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.12)] sm:p-8'>
+                <Card className = 'rounded-[28px] border-slate-200/80 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.12)] sm:p-8'>
                     <h2 className = 'text-center text-3xl font-semibold tracking-tight text-slate-900'>
                         {title}
                     </h2>

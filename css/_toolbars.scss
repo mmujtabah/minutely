@@ -88,7 +88,7 @@
     max-width: 100%;
     align-items: center;
     pointer-events: all;
-    border-radius: 6px;
+    border-radius: 9999px;
 
     .toolbox-content-items {
         @include ltr;
@@ -115,6 +115,7 @@
 
 div.hangup-button {
     background-color: #CB2233;
+    border-radius: 50% !important;
 
     @media (hover: hover) and (pointer: fine) {
         &:hover {
@@ -133,6 +134,7 @@ div.hangup-button {
 
 div.hangup-menu-button {
     background-color: #CB2233;
+    border-radius: 50% !important;
 
     @media (hover: hover) and (pointer: fine) {
         &:hover {

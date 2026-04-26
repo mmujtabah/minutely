@@ -94,6 +94,7 @@ export const designTokens = {
     base: '0.5rem',
     md: '0.75rem',
     lg: '1rem',
+    window: '28px',
     full: '9999px',
   },
   shadows: {
