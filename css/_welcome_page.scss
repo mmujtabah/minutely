@@ -1,0 +1,414 @@
+body.welcome-page {
+    background: inherit;
+    overflow: auto;
+}
+
+.welcome {
+    background-image:
+        radial-gradient(circle at top, rgba(201, 31, 58, 0.10) 0%, rgba(201, 31, 58, 0) 34%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    background-color: #eef2f7;
+    display: flex;
+    flex-direction: column;
+    font-family: $welcomePageFontFamily;
+    justify-content: space-between;
+    min-height: 100dvh;
+    position: relative;
+
+    button,
+    input,
+    select,
+    textarea {
+        font-family: $welcomePageFontFamily !important;
+    }
+
+    .header {
+        background: transparent;
+        padding: 32px 20px 20px;
+        overflow: hidden;
+        position: relative;
+
+        &::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.64) 0%, rgba(255, 255, 255, 0) 60%);
+            pointer-events: none;
+        }
+
+        .header-container {
+            display: $welcomePageHeaderContainerDisplay;
+            flex-direction: column;
+            margin: $welcomePageHeaderContainerMargin;
+            z-index: $zindex2;
+            align-items: center;
+            position: relative;
+            max-width: 480px;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .header-watermark-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            margin-top: calc(20px - #{$welcomePageHeaderContainerMarginTop});
+        }
+
+        .header-text-title {
+            color: $welcomePageTitleColor;
+            font-size: $welcomePageHeaderTextTitleFontSize;
+            font-weight: $welcomePageHeaderTextTitleFontWeight;
+            line-height: $welcomePageHeaderTextTitleLineHeight;
+            margin-bottom: $welcomePageHeaderTextTitleMarginBottom;
+            max-width: $welcomePageHeaderTitleMaxWidth;
+            opacity: $welcomePageHeaderTextTitleOpacity;
+            text-align: $welcomePageHeaderTextAlign;
+        }
+
+        .header-logo-title {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 18px;
+            width: 100%;
+
+            &:after {
+                content: '';
+                position: absolute;
+                width: 112px;
+                height: 112px;
+                border-radius: 9999px;
+                background: radial-gradient(circle, rgba(201, 31, 58, 0.15) 0%, rgba(201, 31, 58, 0) 72%);
+                transform: translateY(-10px);
+                z-index: -1;
+            }
+
+            .header-logo-title-image {
+                display: block;
+                height: auto;
+                max-width: 180px;
+                width: min(180px, 46vw);
+            }
+        }
+
+        .header-text-subtitle {
+            color: #475569;
+            font-size: 1rem;
+            font-weight: 500;
+            line-height: 1.5rem;
+            margin: 0 0 24px 0;
+            text-align: $welcomePageHeaderTextAlign;
+
+        }
+
+        .not-allow-title-character-div {
+            color: #f03e3e;
+            background-color: #fff;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin: 10px 0px 5px 0px;
+            text-align: $welcomePageHeaderTextAlign;
+            border-radius: 5px;
+            padding: 5px;
+            .not-allow-title-character-text {
+                float: right;
+                line-height: 1.9;
+            };
+            .jitsi-icon {
+                margin-right: 9px;
+                float: left;
+
+
+                svg {
+                    fill:#f03e3e;
+
+                    & > *:first-child {
+                        fill: none !important;
+                    }
+                }
+            }
+
+        }
+
+        .insecure-room-name-warning {
+            align-items: center;
+            color: rgb(215, 121, 118);
+            font-weight: 600;
+            display: flex;
+            flex-direction: row;
+            margin-top: 15px;
+            max-width: 480px;
+            width: $welcomePageEnterRoomWidth;
+
+            .jitsi-icon {
+                margin-right: 15px;
+
+                svg {
+                    fill: rgb(215, 121, 118);
+
+                    & > *:first-child {
+                        fill: none !important;
+                    }
+                }
+            }
+        }
+
+        ::placeholder {
+            color: #94a3b8;
+        }
+
+        #enter_room {
+            display: $welcomePageEnterRoomDisplay;
+            align-items: stretch;
+            max-width: 100%;
+            width: $welcomePageEnterRoomWidth;
+            z-index: $zindex2;
+            height: fit-content;
+            padding: 0;
+            margin: 0;
+
+            .join-meeting-container {
+                margin: 0;
+                padding: 28px 26px 20px;
+                border-radius: 28px;
+                background-color: rgba(255, 255, 255, 0.88);
+                border: 1px solid rgba(226, 232, 240, 0.9);
+                box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                width: 100%;
+                text-align: left;
+                color: #0f172a;
+                backdrop-filter: blur(18px);
+            }
+
+            .enter-room-input-container {
+                flex-grow: 1;
+                padding-right: 0;
+
+                .enter-room-input {
+                    border-radius: 9999px;
+                    border: 1px solid #dbe4ee;
+                    background: #f8fafc;
+                    display: inline-block;
+                    height: 52px;
+                    width: 100%;
+                    font-size: 0.875rem;
+                    padding: 0 18px;
+                    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
+
+                    &.focus-visible {
+                        outline: 0;
+                        border-color: #c91f3a;
+                        box-shadow: 0 0 0 3px rgba(201, 31, 58, 0.14);
+                    }
+                }
+            }
+
+        }
+
+        #moderated-meetings {
+            max-width: calc(100% - 40px);
+            padding: 16px 0 0;
+            width: $welcomePageEnterRoomWidth;
+            text-align: center;
+
+            a {
+                color: inherit;
+                font-weight: 600;
+            }
+        }
+    }
+
+    .tab-container {
+        font-size: 1rem;
+        position: relative;
+        text-align: left;
+        display: $welcomePageTabContainerDisplay;
+        flex-direction: column;
+
+        .tab-content{
+            display: $welcomePageTabContentDisplay;
+            height: 250px;
+            margin: 5px 0px;
+            overflow: hidden;
+            flex-grow: 1;
+            position: relative;
+        }
+
+        .tab-buttons {
+            background-color: #e5e7eb;
+            border-radius: 6px;
+            color: #334155;
+            font-size: 0.875rem;
+            line-height: 1.125rem;
+            margin: 4px;
+            display: $welcomePageTabButtonsDisplay;
+
+            [role="tab"] {
+                background-color: #e5e7eb;
+                border-radius: 7px;
+                cursor: pointer;
+                display: $welcomePageTabDisplay;
+                flex-grow: 1;
+                margin: 2px;
+                padding: 7px 0;
+                text-align: center;
+                color: inherit;
+                border: 0;
+
+                &[aria-selected="true"] {
+                    background-color: #f8fafc;
+                }
+            }
+
+        }
+    }
+
+    .welcome-page-button {
+        border: 0;
+        font-size: 0.875rem;
+        background: linear-gradient(180deg, #cf2245 0%, #b80d34 100%);
+        border-radius: 9999px;
+        color: #FFFFFF;
+        cursor: pointer;
+        font-weight: 600;
+        min-height: 52px;
+        padding: 0 20px;
+        width: 100%;
+        box-shadow: 0 14px 30px rgba(201, 31, 58, 0.25);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        &:focus-within {
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(201, 31, 58, 0.18), 0 14px 30px rgba(201, 31, 58, 0.25);
+        }
+
+        &:hover {
+            background: linear-gradient(180deg, #d62d52 0%, #c3163d 100%);
+            transform: translateY(-1px);
+        }
+    }
+
+    .welcome-page-settings {
+        background: #e5e7eb;
+        border-radius: 3px;
+        color: #334155;
+        padding: 4px;
+        position: absolute;
+        top: calc(35px - #{$welcomePageHeaderContainerMarginTop});
+        right: 0;
+        z-index: $zindex2;
+
+        * {
+            cursor: pointer;
+            font-size: 2rem;
+        }
+
+        .toolbox-icon {
+            height: 24px;
+            width: 24px;
+        }
+    }
+
+    .welcome-watermark {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+
+        .watermark.leftwatermark {
+            width: $welcomePageWatermarkWidth;
+            height: $welcomePageWatermarkHeight;
+        }
+    }
+
+    &.without-content {
+        .welcome-card {
+            max-width: 100dvw;
+        }
+    }
+
+    &.without-footer {
+        justify-content: start;
+    }
+
+    .welcome-cards-container {
+        color:#0f172a;
+        padding: 28px 20px 0;
+    }
+
+    .welcome-card-column {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        max-width: 1080px;
+        margin: auto;
+        width: 100%;
+
+        > div {
+            margin-bottom: 18px;
+        }
+    }
+
+    .welcome-card-text {
+        padding: 32px;
+    }
+
+    .welcome-card {
+        width: 100%;
+        border-radius: 20px;
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+
+        &--dark {
+            background: rgba(226, 232, 240, 0.72);
+            color: #0f172a;
+        }
+
+        &--blue {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        &--grey {
+            background: rgba(248, 250, 252, 0.8);
+        }
+    }
+
+    .welcome-footer {
+        background: transparent;
+        color: #64748b;
+        margin-top: 24px;
+        position: relative;
+    }
+
+    .welcome-footer-centered {
+        max-width: 688px;
+        margin: 0 auto;
+    }
+
+    .welcome-footer-padded {
+        padding: 0px 16px;
+    }
+
+    .welcome-footer-row-block {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #d1d5db;
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    .welcome-footer--row-1 {
+        padding: 40px 0 24px 0;
+    }
+
+    .welcome-footer-row-1-text {
+        max-width: 200px;
+        text-align: center;
+    }
+}

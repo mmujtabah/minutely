@@ -1,0 +1,49 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@layer base {
+  :root {
+    /* Jitsi Meet Theme Colors */
+    --color-border: 220 13% 91%;
+    --color-input: 220 13% 91%;
+    --color-ring: 349 73% 46%;
+    --color-background: 0 0% 100%;
+    --color-foreground: 222 47% 11%;
+
+    /* Primary - Crimson Red */
+    --color-primary: 349 73% 46%;
+    --color-primary-foreground: 0 0% 100%;
+
+    /* Secondary - Light Gray */
+    --color-secondary: 210 20% 96%;
+    --color-secondary-foreground: 222 47% 11%;
+
+    /* Destructive */
+    --color-destructive: 0 84% 60%;
+    --color-destructive-foreground: 0 0% 100%;
+
+    /* Muted */
+    --color-muted: 215 16% 47%;
+    --color-muted-foreground: 0 0% 100%;
+
+    /* Accent */
+    --color-accent: 349 73% 46%;
+    --color-accent-foreground: 0 0% 100%;
+
+    /* Popover */
+    --color-popover: 0 0% 100%;
+    --color-popover-foreground: 222 47% 11%;
+
+    /* Card */
+    --color-card: 0 0% 100%;
+    --color-card-foreground: 222 47% 11%;
+
+    /* Border Radius */
+    --radius: 0.5rem;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
