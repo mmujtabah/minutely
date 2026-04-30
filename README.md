@@ -5,7 +5,7 @@ Minutely is a platform which empowers users to use and deploy video conferencing
 <hr />
 
 <p align="center">
-<img src="images/icon.png" width="200" />
+<img src="images/minutely-logo.png" width="900" />
 </p>
 
 <hr />
