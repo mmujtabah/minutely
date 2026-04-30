@@ -1,12 +1,11 @@
 # <p align="center">Minutely</p>
 
-Minutely is a set of Open Source projects which empower users to use and deploy
-video conferencing platforms with state-of-the-art video quality and features.
+Minutely is a platform which empowers users to use and deploy video conferencing with state-of-the-art video quality and AI features.
 
 <hr />
 
 <p align="center">
-<img src="images/minutely-logo.png" width="900" />
+<img src="images/icon.png" width="200" />
 </p>
 
 <hr />
@@ -22,6 +21,10 @@ Amongst others here are the main features Minutely offers:
 * Chat with private conversations
 * Polls
 * Virtual backgrounds
+* AI Meeting notes and summaries
+* AI Transcriptions
+* Automatic Task Assignments
+* Recorded Meetings Transcription and Summaries
 
 And many more!
 
