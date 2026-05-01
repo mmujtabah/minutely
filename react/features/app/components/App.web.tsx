@@ -8,6 +8,7 @@ import OverlayContainer from '../../overlay/components/web/OverlayContainer';
 import PiP from '../../pip/components/PiP';
 
 import { AbstractApp } from './AbstractApp';
+import { AuthWrapper } from '../../supabase-auth/components/AuthWrapper.web';
 
 // Register middlewares and reducers.
 import '../middlewares';
@@ -45,12 +46,14 @@ export class App extends AbstractApp {
      */
     override _createMainElement(component: React.ComponentType, props?: Object) {
         return (
-            <JitsiThemeProvider>
-                <GlobalStyles />
-                <ChromeExtensionBanner />
-                <PiP />
-                { super._createMainElement(component, props) }
-            </JitsiThemeProvider>
+            <AuthWrapper>
+                <JitsiThemeProvider>
+                    <GlobalStyles />
+                    <ChromeExtensionBanner />
+                    <PiP />
+                    { super._createMainElement(component, props) }
+                </JitsiThemeProvider>
+            </AuthWrapper>
         );
     }
 

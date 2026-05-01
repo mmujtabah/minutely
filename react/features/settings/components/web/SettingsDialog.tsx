@@ -6,6 +6,7 @@ import { IReduxState, IStore } from '../../../app/types';
 import {
     IconBell,
     IconCalendar,
+    IconCloseLarge,
     IconGear,
     IconImage,
     IconModerator,
@@ -51,6 +52,7 @@ import NotificationsTab from './NotificationsTab';
 import ProfileTab from './ProfileTab';
 import ShortcutsTab from './ShortcutsTab';
 import VirtualBackgroundTab from './VirtualBackgroundTab';
+import LogoutTab from './LogoutTab';
 
 /**
  * The type of the React {@code Component} props of
@@ -331,6 +333,13 @@ function _mapStateToProps(state: IReduxState, ownProps: any) {
             icon: IconGear
         });
     }
+
+    tabs.push({
+        name: 'logout',
+        component: LogoutTab,
+        labelKey: 'Logout',
+        icon: IconCloseLarge
+    });
 
     return { _tabs: tabs };
 }

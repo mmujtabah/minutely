@@ -135,9 +135,9 @@ const useStyles = makeStyles()(theme => {
         },
 
         selected: {
-            borderLeft: `3px solid ${theme.palette.action01Hover}`,
+            borderLeft: '3px solid #c01140',
             paddingLeft: '13px',
-            backgroundColor: theme.palette.overflowMenuItemHover
+            backgroundColor: 'rgba(192, 17, 64, 0.1)'
         },
 
         contextMenuItemDisabled: {

@@ -292,25 +292,31 @@ body.welcome-page {
     }
 
     .welcome-page-settings {
-        background: #e5e7eb;
-        border-radius: 3px;
-        color: #334155;
-        padding: 4px;
         position: absolute;
         top: calc(35px - #{$welcomePageHeaderContainerMarginTop});
         right: 0;
         z-index: $zindex2;
+        background: #e5e7eb;
+        border-radius: 16px;
+        padding: 8px;
 
-        * {
-            cursor: pointer;
-            font-size: 2rem;
-        }
-
+        /* Override Jitsi's circular toolbox-icon hover */
         .toolbox-icon {
-            height: 24px;
-            width: 24px;
+            border-radius: 8px !important;
+            background: transparent !important;
+            width: 40px !important;
+            height: 40px !important;
+
+            &:hover {
+                background: transparent !important;
+            }
+
+            &:active {
+                background: transparent !important;
+            }
         }
     }
+
 
     .welcome-watermark {
         position: absolute;
@@ -361,6 +367,7 @@ body.welcome-page {
         border-radius: 28px;
         border: 1px solid rgba(226, 232, 240, 0.95);
         box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
 
         &--dark {
             background: rgba(226, 232, 240, 0.72);

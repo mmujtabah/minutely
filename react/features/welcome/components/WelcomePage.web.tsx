@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { supabase } from '../../supabase-auth/client';
 
 import { isMobileBrowser } from '../../base/environment/utils';
 import { translate, translateToHTML } from '../../base/i18n/functions';
@@ -199,13 +200,90 @@ class WelcomePage extends AbstractWelcomePage<IProps> {
             <div
                 className = { `welcome ${contentClassName} ${footerClassName}` }
                 id = 'welcome_page'>
+                { /* Runtime style override — beats MUI GlobalStyles injection order */ }
+                <style>{`
+                    @keyframes gear-spin {
+                        from { transform: rotate(0deg); }
+                        to   { transform: rotate(180deg); }
+                    }
+                    .gear-spinning {
+                        animation: gear-spin 0.4s ease-out forwards;
+                    }
+                    .welcome-page-settings .toolbox-icon,
+                    .welcome-page-settings .toolbox-button {
+                        border-radius: 8px !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                    }
+                    .welcome-page-settings .toolbox-icon:hover,
+                    .welcome-page-settings .toolbox-icon:active,
+                    .welcome-page-settings .toolbox-button:hover,
+                    .welcome-page-settings .toolbox-button:active {
+                        background: transparent !important;
+                        border-radius: 8px !important;
+                    }
+
+                    .welcome-card {
+                        overflow: hidden !important;
+                    }
+
+                    .meetings-list {
+                        padding: 8px 0 !important;
+                    }
+                    .meetings-list .item {
+                        border-radius: 28px !important;
+                        margin: 0 !important;
+                        width: 100% !important;
+                    }
+                    .meetings-list .item.with-click-handler:hover,
+                    .meetings-list .item.with-click-handler:focus {
+                        background-color: #fdeef2 !important;
+                    }
+                    .meetings-list .delete-meeting > svg {
+                        fill: #c01140 !important;
+                    }
+                    .meetings-list .item:hover .delete-meeting:hover > svg {
+                        fill: #a00f35 !important;
+                    }
+                `}</style>
                 <div className = 'header'>
                     <div className = 'header-image' />
                     <div className = 'header-container'>
-                        <div className = 'welcome-page-settings'>
-                            <SettingsButton
-                                defaultTab = { SETTINGS_TABS.CALENDAR }
-                                isDisplayedOnWelcomePage = { true } />
+                        <div
+                            className = 'welcome-page-settings'
+                            style = {{
+                                background: '#e5e7eb',
+                                borderRadius: '16px',
+                                padding: '8px'
+                            }}>
+                            <div
+                                onClick = { () => {
+                                    const el = document.getElementById('settings-gear-icon');
+                                    if (el) {
+                                        el.classList.remove('gear-spinning');
+                                        const _reflow = el.offsetWidth;
+                                        el.classList.add('gear-spinning');
+                                    }
+                                } }
+                                style = {{
+                                    background: '#c01140',
+                                    borderRadius: '8px',
+                                    width: '40px',
+                                    height: '40px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 14px rgba(192,17,64,0.35)',
+                                    cursor: 'pointer'
+                                }}>
+                                <span
+                                    id = 'settings-gear-icon'
+                                    style = {{ filter: 'brightness(0) invert(1)', display: 'flex' }}>
+                                    <SettingsButton
+                                        defaultTab = { SETTINGS_TABS.CALENDAR }
+                                        isDisplayedOnWelcomePage = { true } />
+                                </span>
+                            </div>
                             {showAdditionalToolbarContent
                                 ? <div
                                     className = 'settings-toolbar-content'
