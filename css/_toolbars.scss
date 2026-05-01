@@ -214,3 +214,26 @@ div.hangup-menu-button {
         }
     }
 }
+
+/**
+ * GLOBAL BRANDING OVERRIDES
+ * Force all toolbox elements to be circular.
+ */
+.toolbox-icon,
+.settings-button-small-icon,
+.settings-button-small-icon-container {
+    border-radius: 50% !important;
+}
+
+.settings-button-small-icon {
+    aspect-ratio: 1/1 !important;
+    width: 20px !important;
+    height: 20px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    right: -6px !important;
+    top: -6px !important;
+}
+

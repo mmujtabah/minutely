@@ -258,6 +258,7 @@ const PreMeetingScreen = ({
                 height: 44px !important;
                 justify-content: center !important;
                 width: 44px !important;
+                border-radius: 50% !important;
             }
 
             .premeeting-screen #new-toolbox .toolbox-content-items .toolbox-icon .jitsi-icon,

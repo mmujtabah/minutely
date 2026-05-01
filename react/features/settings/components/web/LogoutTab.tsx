@@ -22,8 +22,8 @@ const LogoutTab = () => {
             height: '100%',
             textAlign: 'center'
         }}>
-            <h2 style={{ marginBottom: '16px', color: '#1f2937' }}>Sign Out</h2>
-            <p style={{ marginBottom: '24px', color: '#6b7280' }}>Are you sure you want to sign out of your account?</p>
+            <h2 style={{ marginBottom: '16px', color: '#ffffff' }}>Sign Out</h2>
+            <p style={{ marginBottom: '24px', color: '#d1d5db' }}>Are you sure you want to sign out of your account?</p>
             <button 
                 onClick={handleLogout}
                 style={{

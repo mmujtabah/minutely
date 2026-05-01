@@ -224,6 +224,7 @@ const useStyles = makeStyles()(theme => {
             '&, & > table': {
                 fontSize: '0.75rem',
                 fontWeight: 400,
+                color: '#ffffff',
 
                 '& td': {
                     padding: '2px 0'

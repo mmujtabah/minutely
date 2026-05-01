@@ -119,6 +119,45 @@ export default function Toolbox({
     useKeyboardShortcuts(toolbarButtonsToUse);
 
     useEffect(() => {
+        const styleEl = document.createElement('style');
+
+        styleEl.id = 'toolbox-branding-runtime-fixes';
+        styleEl.textContent = `
+            .toolbox-icon,
+            .settings-button-small-icon,
+            .settings-button-small-icon-container {
+                border-radius: 50% !important;
+            }
+
+            .settings-button-small-icon {
+                aspect-ratio: 1/1 !important;
+                width: 20px !important;
+                height: 20px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 0 !important;
+                right: -6px !important;
+                top: -6px !important;
+                overflow: hidden !important;
+            }
+
+            /* Ensure the icon inside is centered */
+            .settings-button-small-icon .jitsi-icon {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+        `;
+
+        document.head.appendChild(styleEl);
+
+        return () => {
+            styleEl.remove();
+        };
+    }, []);
+
+    useEffect(() => {
         if (!toolbarVisible) {
             if (document.activeElement instanceof HTMLElement
                 && _toolboxRef.current?.contains(document.activeElement)) {
