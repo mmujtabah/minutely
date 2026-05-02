@@ -33,6 +33,7 @@ import { toggleToolboxVisible } from '../../../toolbox/actions.any';
 import { fullScreenChanged, showToolbox } from '../../../toolbox/actions.web';
 import JitsiPortal from '../../../toolbox/components/web/JitsiPortal';
 import Toolbox from '../../../toolbox/components/web/Toolbox';
+import { ToggleSidebarButton, TranscriptPanel } from '../../../transcription/components';
 import { LAYOUT_CLASSNAMES } from '../../../video-layout/constants';
 import { getCurrentLayout } from '../../../video-layout/functions.any';
 import VisitorsQueue from '../../../visitors/components/web/VisitorsQueue';
@@ -249,6 +250,8 @@ class Conference extends AbstractConference<IProps, any> {
                     onMouseMove = { this._onMouseMove }
                     ref = { this._setBackground }>
                     <Chat />
+                    <TranscriptPanel />
+                    <ToggleSidebarButton />
                     <div
                         className = { _layoutClassName }
                         id = 'videoconference_page'
@@ -281,6 +284,8 @@ class Conference extends AbstractConference<IProps, any> {
                 onMouseMove = { this._onMouseMove }
                 ref = { this._setBackground }>
                 <Chat />
+                <TranscriptPanel />
+                <ToggleSidebarButton />
                 <div
                     className = { _layoutClassName }
                     id = 'videoconference_page'
