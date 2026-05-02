@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -56,8 +55,9 @@ func NewFileProcessor(
 }
 
 // Process executes the full transcription pipeline for a given job
+// Process executes the full transcription pipeline for a given job,
+// claiming it as 'processing' first. Used for direct calls.
 func (p *FileProcessor) Process(ctx context.Context, job *domain.ProcessingJob) error {
-	// Mark job as processing
 	now := time.Now()
 	job.Status = domain.JobStatusProcessing
 	job.StartedAt = &now
@@ -65,7 +65,16 @@ func (p *FileProcessor) Process(ctx context.Context, job *domain.ProcessingJob) 
 	if err := p.jobRepo.UpdateJob(ctx, job); err != nil {
 		return fmt.Errorf("failed to mark job processing: %w", err)
 	}
+	return p.run(ctx, job)
+}
 
+// ProcessClaimed executes the pipeline for a job already marked 'processing' by the pool.
+// Skips the duplicate status update to avoid a redundant DB write.
+func (p *FileProcessor) ProcessClaimed(ctx context.Context, job *domain.ProcessingJob) error {
+	return p.run(ctx, job)
+}
+
+func (p *FileProcessor) run(ctx context.Context, job *domain.ProcessingJob) error {
 	var err error
 	if job.JobType == domain.JobTypeAIProcessing {
 		err = p.processAIJob(ctx, job)
@@ -89,6 +98,7 @@ func (p *FileProcessor) Process(ctx context.Context, job *domain.ProcessingJob) 
 	job.CompletedAt = &completedAt
 	return p.jobRepo.UpdateJob(ctx, job)
 }
+
 
 func (p *FileProcessor) processJob(ctx context.Context, job *domain.ProcessingJob) error {
 	// Parse payload to get media_file_id and language
@@ -127,11 +137,29 @@ func (p *FileProcessor) processJob(ctx context.Context, job *domain.ProcessingJo
 	if err := os.MkdirAll(p.tempDir, 0755); err != nil {
 		return fmt.Errorf("failed to create temp dir: %w", err)
 	}
-	ext := ".bin"
-	if mediaFile.MimeType == "video/mp4" {
-		ext = ".mp4"
-	} else if strings.HasPrefix(mediaFile.MimeType, "audio/") {
-		ext = ".wav"
+	// Comprehensive MIME → file extension mapping.
+	// Correct extensions ensure FFmpeg uses the right demuxer.
+	mimeToExt := map[string]string{
+		"video/mp4":              ".mp4",
+		"video/quicktime":        ".mov",
+		"video/x-matroska":       ".mkv",
+		"video/webm":             ".webm",
+		"video/x-msvideo":        ".avi",
+		"audio/mpeg":             ".mp3",
+		"audio/wav":              ".wav",
+		"audio/x-wav":            ".wav",
+		"audio/mp4":              ".m4a",
+		"audio/x-m4a":            ".m4a",
+		"audio/aac":              ".aac",
+		"audio/ogg":              ".ogg",
+		"audio/webm":             ".webm",
+		"audio/flac":             ".flac",
+		"application/octet-stream": ".bin",
+	}
+	ext, ok := mimeToExt[mediaFile.MimeType]
+	if !ok {
+		log.Printf("[job %s] Unknown MIME type '%s', defaulting to .bin", job.ID, mediaFile.MimeType)
+		ext = ".bin"
 	}
 	tmpInput := fmt.Sprintf("%s/%s%s", p.tempDir, uuid.New().String(), ext)
 	tmpFile, err := os.Create(tmpInput)
@@ -145,8 +173,10 @@ func (p *FileProcessor) processJob(ctx context.Context, job *domain.ProcessingJo
 	tmpFile.Close()
 	defer p.extractor.Cleanup(tmpInput)
 
-	// --- STAGE B: Audio Extraction (skip if already WAV/MP3) ---
-	log.Printf("[job %s] Stage B: Extracting 16kHz WAV audio", job.ID)
+	// --- STAGE B: Audio Extraction + Preprocessing ---
+	// FFmpeg applies: highpass filter (80Hz) → EBU R128 loudnorm → silence removal
+	// This significantly improves Whisper transcription accuracy on noisy recordings.
+	log.Printf("[job %s] Stage B: Extracting + preprocessing 16kHz WAV audio (MIME: %s)", job.ID, mediaFile.MimeType)
 	wavPath, err := p.extractor.ExtractWav16kHz(ctx, tmpInput)
 	if err != nil {
 		return fmt.Errorf("ffmpeg extraction failed: %w", err)

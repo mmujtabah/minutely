@@ -26,3 +26,11 @@ func (s *meetingService) GetMeeting(ctx context.Context, id uuid.UUID) (*domain.
 func (s *meetingService) ListUserMeetings(ctx context.Context, userID uuid.UUID) ([]*domain.Meeting, error) {
 	return s.repo.ListByUser(ctx, userID)
 }
+
+func (s *meetingService) GetDashboardStats(ctx context.Context, userID uuid.UUID) (*domain.DashboardStats, error) {
+	return s.repo.GetDashboardStats(ctx, userID)
+}
+
+func (s *meetingService) ListMeetingSummaries(ctx context.Context, userID uuid.UUID) ([]*domain.MeetingSummary, error) {
+	return s.repo.ListSummaries(ctx, userID)
+}

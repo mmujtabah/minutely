@@ -104,7 +104,49 @@ func (r *supabaseMeetingRepo) ListByUser(ctx context.Context, userID uuid.UUID) 
 	return meetings, nil
 }
 
+func (r *supabaseMeetingRepo) ListSummaries(ctx context.Context, userID uuid.UUID) ([]*domain.MeetingSummary, error) {
+	data, _, err := r.client.From("meeting_summaries").
+		Select("*", "exact", false).
+		Eq("user_id", userID.String()).
+		Order("created_at", nil).
+		Execute()
+	if err != nil {
+		return nil, err
+	}
+
+	var summaries []*domain.MeetingSummary
+	if err := json.Unmarshal(data, &summaries); err != nil {
+		return nil, err
+	}
+
+	return summaries, nil
+}
+
 func (r *supabaseMeetingRepo) Update(ctx context.Context, meeting *domain.Meeting) error {
 	_, _, err := r.client.From("meetings").Update(meeting, "exact", "id").Eq("id", meeting.ID.String()).Execute()
 	return err
+}
+
+func (r *supabaseMeetingRepo) GetDashboardStats(ctx context.Context, userID uuid.UUID) (*domain.DashboardStats, error) {
+	// Call the Supabase RPC function 'get_dashboard_stats'
+	data := r.client.Rpc("get_dashboard_stats", "", map[string]interface{}{
+		"p_user_id": userID.String(),
+	})
+
+	if data == "" {
+		return nil, errors.New("rpc returned empty data")
+	}
+
+	// We expect data to be a JSON string like "{\"total_meetings\": 5, ...}"
+	// or directly the JSON bytes depending on the client.
+	// We'll try to unmarshal it directly first.
+	// Note: supabase.Rpc might return string or []byte or interface. 
+	// The supabase-community/supabase-go client returns string for Rpc.
+	
+	var stats domain.DashboardStats
+	if err := json.Unmarshal([]byte(data), &stats); err != nil {
+		return nil, err
+	}
+
+	return &stats, nil
 }
