@@ -70,29 +70,52 @@ func (p *Pool) runWorker(ctx context.Context, id int) {
 }
 
 func (p *Pool) processOnePendingJob(ctx context.Context, workerID int) {
-	// 1. Try to fetch an AI processing job first (higher priority for live meetings)
-	jobs, err := p.jobRepo.ListPendingJobs(ctx, domain.JobTypeAIProcessing, 1)
-	if err != nil {
-		log.Printf("[worker %d] Error fetching AI jobs: %v", workerID, err)
+	// Priority: AI processing jobs first (unblock live meeting insights),
+	// then file transcription jobs.
+	jobTypes := []domain.JobType{
+		domain.JobTypeAIProcessing,
+		domain.JobTypeFileTranscription,
 	}
 
-	// 2. If no AI jobs, try file transcription jobs
-	if len(jobs) == 0 {
-		jobs, err = p.jobRepo.ListPendingJobs(ctx, domain.JobTypeFileTranscription, 1)
+	for _, jt := range jobTypes {
+		jobs, err := p.jobRepo.ListPendingJobs(ctx, jt, 1)
 		if err != nil {
-			log.Printf("[worker %d] Error fetching file jobs: %v", workerID, err)
+			log.Printf("[worker %d] Error fetching %s jobs: %v", workerID, jt, err)
+			continue
+		}
+		if len(jobs) == 0 {
+			continue
+		}
+
+		job := jobs[0]
+
+		// ── Optimistic Claim ────────────────────────────────────────────────
+		// Transition the job from 'pending' → 'processing' before dispatching
+		// it to the processor. Because the processor previously did this same
+		// update at the top of Process(), moving it here means the job is
+		// marked as taken before any other worker can see it as 'pending'.
+		//
+		// NOTE: For a fully atomic guarantee (zero double-processing risk),
+		// add a Supabase RPC that runs:
+		//   UPDATE processing_jobs SET status='processing', started_at=NOW(),
+		//   attempt_count=attempt_count+1
+		//   WHERE id=$1 AND status='pending' RETURNING *;
+		// This can be added without changing the domain interface.
+		now := time.Now()
+		job.Status = domain.JobStatusProcessing
+		job.StartedAt = &now
+		job.AttemptCount++
+		if claimErr := p.jobRepo.UpdateJob(ctx, job); claimErr != nil {
+			log.Printf("[worker %d] Could not claim job %s: %v", workerID, job.ID, claimErr)
 			return
 		}
-	}
 
-	if len(jobs) == 0 {
-		return // Nothing to do
-	}
+		log.Printf("[worker %d] Claimed job %s (type: %s, attempt: %d)", workerID, job.ID, job.JobType, job.AttemptCount)
 
-	job := jobs[0]
-	log.Printf("[worker %d] Picked up job %s (type: %s)", workerID, job.ID, job.JobType)
-
-	if err := p.processor.Process(ctx, job); err != nil {
-		log.Printf("[worker %d] Job %s failed: %v", workerID, job.ID, err)
+		if err := p.processor.ProcessClaimed(ctx, job); err != nil {
+			log.Printf("[worker %d] Job %s failed: %v", workerID, job.ID, err)
+		}
+		// Process one job per tick to keep workers evenly distributed
+		return
 	}
 }

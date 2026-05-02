@@ -85,6 +85,19 @@ func (h *Handler) ListMeetings(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(meetings)
 }
 
+func (h *Handler) ListMeetingSummaries(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+
+	summaries, err := h.meetingService.ListMeetingSummaries(r.Context(), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(summaries)
+}
+
 func (h *Handler) GetMeeting(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -100,4 +113,17 @@ func (h *Handler) GetMeeting(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(meeting)
+}
+
+func (h *Handler) GetDashboardStats(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+
+	stats, err := h.meetingService.GetDashboardStats(r.Context(), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
 }

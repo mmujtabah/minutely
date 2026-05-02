@@ -97,9 +97,35 @@ class MeetingAnalyzer:
             if not full_text and event.segments:
                 full_text = " ".join([seg.text for seg in event.segments])
             
-            if len(full_text.split()) > 40:
-                chunk = " ".join(full_text.split()[:500])
-                exec_summary = self.summarizer(chunk, max_length=100, min_length=30, do_sample=False)[0]['summary_text']
+            # Improved chunking for long meetings
+            words = full_text.split()
+            if len(words) > 40:
+                # Chunking strategy for large contexts
+                max_chunk_words = 400
+                chunks = [" ".join(words[i:i + max_chunk_words]) for i in range(0, len(words), max_chunk_words)]
+                
+                chunk_summaries = []
+                for chunk in chunks:
+                    if len(chunk.split()) > 30:
+                        try:
+                            # Summarize each chunk
+                            res = self.summarizer(chunk, max_length=120, min_length=30, do_sample=False)
+                            chunk_summaries.append(res[0]['summary_text'])
+                        except Exception as e:
+                            print(f"Failed to summarize chunk: {e}")
+                            chunk_summaries.append(chunk[:150] + "...")
+                
+                # If we have multiple chunk summaries, summarize the summaries (map-reduce)
+                if len(chunk_summaries) > 1:
+                    combined_summaries = " ".join(chunk_summaries)
+                    if len(combined_summaries.split()) > 40:
+                        exec_summary = self.summarizer(combined_summaries, max_length=150, min_length=50, do_sample=False)[0]['summary_text']
+                    else:
+                        exec_summary = combined_summaries
+                elif len(chunk_summaries) == 1:
+                    exec_summary = chunk_summaries[0]
+                else:
+                    exec_summary = "Unable to summarize meeting."
             else:
                 exec_summary = full_text
 

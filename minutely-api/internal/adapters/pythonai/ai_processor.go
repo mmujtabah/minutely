@@ -12,14 +12,16 @@ import (
 )
 
 type pythonAIProcessor struct {
-	endpointUrl  string
-	aiOutputRepo domain.AIOutputRepository
+	endpointUrl    string
+	aiOutputRepo   domain.AIOutputRepository
+	actionItemRepo domain.ActionItemRepository
 }
 
-func NewPythonAIProcessor(endpointUrl string, aiOutputRepo domain.AIOutputRepository) domain.AIProcessor {
+func NewPythonAIProcessor(endpointUrl string, aiOutputRepo domain.AIOutputRepository, actionItemRepo domain.ActionItemRepository) domain.AIProcessor {
 	return &pythonAIProcessor{
-		endpointUrl:  endpointUrl,
-		aiOutputRepo: aiOutputRepo,
+		endpointUrl:    endpointUrl,
+		aiOutputRepo:   aiOutputRepo,
+		actionItemRepo: actionItemRepo,
 	}
 }
 
@@ -64,6 +66,36 @@ func (p *pythonAIProcessor) ProcessTranscript(ctx context.Context, event domain.
 
 	if err := p.aiOutputRepo.Create(ctx, output); err != nil {
 		return fmt.Errorf("failed to save AI output to db: %w", err)
+	}
+
+	// Also extract and persist action items
+	if actionItemsInterface, ok := result["action_items"]; ok {
+		if actionItemsList, ok := actionItemsInterface.([]interface{}); ok {
+			for _, itemInterface := range actionItemsList {
+				if itemMap, ok := itemInterface.(map[string]interface{}); ok {
+					task, _ := itemMap["task"].(string)
+					assignee, _ := itemMap["assignee"].(string)
+					// deadline, _ := itemMap["deadline"].(string)
+					
+					if task != "" {
+						actionItem := &domain.ActionItem{
+							MeetingID:    event.MeetingID,
+							TranscriptID: &event.TranscriptID,
+							Task:         task,
+							Status:       domain.ActionItemStatusOpen,
+						}
+						
+						if assignee != "" {
+							actionItem.AssigneeName = &assignee
+						}
+						
+						if err := p.actionItemRepo.Create(ctx, actionItem); err != nil {
+							log.Printf("[AIProcessor] Warning: failed to save action item '%s': %v", task, err)
+						}
+					}
+				}
+			}
+		}
 	}
 
 	return nil

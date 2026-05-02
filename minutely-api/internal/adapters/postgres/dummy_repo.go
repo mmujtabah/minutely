@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/MinutelyAI/minutely-api/internal/core/domain"
@@ -22,7 +23,10 @@ func (r *dummyProfileRepo) Update(ctx context.Context, profile *domain.Profile) 
 	return nil
 }
 
-type dummyMeetingRepo struct{}
+type dummyMeetingRepo struct {
+	mu       sync.Mutex
+	meetings []*domain.Meeting
+}
 
 func NewDummyMeetingRepo() domain.MeetingRepository {
 	return &dummyMeetingRepo{}
@@ -43,4 +47,17 @@ func (r *dummyMeetingRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]
 
 func (r *dummyMeetingRepo) Update(ctx context.Context, meeting *domain.Meeting) error {
 	return nil
+}
+
+func (r *dummyMeetingRepo) GetDashboardStats(ctx context.Context, userID uuid.UUID) (*domain.DashboardStats, error) {
+	return &domain.DashboardStats{
+		TotalMeetings:    0,
+		HoursTranscribed: 0,
+		OpenActionItems:  0,
+		PeopleMet:        0,
+	}, nil
+}
+
+func (r *dummyMeetingRepo) ListSummaries(ctx context.Context, userID uuid.UUID) ([]*domain.MeetingSummary, error) {
+	return []*domain.MeetingSummary{}, nil
 }

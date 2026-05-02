@@ -74,12 +74,15 @@ func main() {
 	}
 	dgClient := deepgram.NewDeepgramClient(deepgramKey)
 
+	// --- Action Item Repo ---
+	actionItemRepo := postgres.NewSupabaseActionItemRepo(client)
+
 	// --- AI Processor (Hits Modal serverless endpoint) ---
 	aiEndpoint := os.Getenv("MODAL_AI_ENDPOINT")
 	if aiEndpoint == "" {
 		aiEndpoint = "http://127.0.0.1:8000"
 	}
-	aiProcessor := pythonai.NewPythonAIProcessor(aiEndpoint, aiOutputRepo)
+	aiProcessor := pythonai.NewPythonAIProcessor(aiEndpoint, aiOutputRepo, actionItemRepo)
 
 	// --- Services ---
 	profileService := services.NewProfileService(profileRepo)
@@ -117,6 +120,8 @@ func main() {
 	liveHandler := apihttp.NewLiveTranscriptionHandler(transcriptionService, meetingService, wsHub)
 	aiHandler := apihttp.NewAIHandler(aiOutputRepo)
 
+	actionItemHandler := apihttp.NewActionItemHandler(actionItemRepo)
+
 	// --- Router ---
 	r := chi.NewRouter()
 	r.Use(chimiddleware.Logger)
@@ -144,8 +149,20 @@ func main() {
 				r.Use(authMiddleware.Handle)
 				r.Post("/", handler.CreateMeeting)
 				r.Get("/", handler.ListMeetings)
+				r.Get("/summaries", handler.ListMeetingSummaries)
 				r.Get("/{id}", handler.GetMeeting)
 			})
+		})
+
+		r.Route("/stats", func(r chi.Router) {
+			r.Use(authMiddleware.Handle)
+			r.Get("/", handler.GetDashboardStats)
+		})
+
+		r.Route("/action-items", func(r chi.Router) {
+			r.Use(authMiddleware.Handle)
+			r.Get("/", actionItemHandler.ListOpenForUser)
+			r.Patch("/{id}/status", actionItemHandler.UpdateStatus)
 		})
 
 		r.Route("/jobs", func(r chi.Router) {
