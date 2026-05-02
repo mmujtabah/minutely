@@ -291,6 +291,12 @@ function getDevServerConfig() {
         hot: true,
         proxy: [
             {
+                context: [ '/api/v1' ],
+                target: 'http://127.0.0.1:8081',
+                secure: false,
+                ws: true // Support WebSockets for our Hub
+            },
+            {
                 context: [ '/' ],
                 bypass: devServerProxyBypass,
                 secure: false,

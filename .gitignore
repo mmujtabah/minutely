@@ -121,3 +121,7 @@ test-results
 # env files
 .env
 minutely-api/.env
+scratch/
+minutely-api/cmd/scratch/
+__pycache__/
+*.pyc
