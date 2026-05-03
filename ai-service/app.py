@@ -23,7 +23,20 @@ logger.info("Loading Zero-Shot Classifier for Tasks...")
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
 logger.info("Loading Sequence-to-Sequence Summarizer (BART)...")
-summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+try:
+    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+except KeyError:
+    logger.warning("Summarization task not found in pipeline registry. Falling back to manual model loading.")
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
+    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/bart-large-cnn")
+    
+    def summarizer_fallback(text, max_length=100, min_length=30, **kwargs):
+        inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=1024)
+        summary_ids = model.generate(inputs["input_ids"], max_length=max_length, min_length=min_length, length_penalty=2.0, num_beams=4, early_stopping=True)
+        return [{"summary_text": tokenizer.decode(summary_ids[0], skip_special_tokens=True)}]
+    
+    summarizer = summarizer_fallback
 
 # ---------------------------------------------------------------------------
 # API Schemas
