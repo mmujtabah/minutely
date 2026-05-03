@@ -60,14 +60,12 @@ func main() {
 	jobRepo := postgres.NewSupabaseJobRepo(client)
 	aiOutputRepo := postgres.NewSupabaseAIOutputRepo(client)
 
-
-
 	// --- Adapters ---
 	storageURL := supabaseURL + "/storage/v1"
 	storageService := adapterStorage.NewSupabaseStorage(storageURL, supabaseKey)
 	audioExtractor := audio.NewFFmpegExtractor(os.TempDir())
 	modalClient := modal.NewModalClient(modalEndpoint, modalToken)
-	
+
 	deepgramKey := os.Getenv("DEEPGRAM_KEY")
 	if deepgramKey == "" {
 		log.Println("Warning: DEEPGRAM_KEY not set. Live transcription will not work.")
@@ -76,6 +74,7 @@ func main() {
 
 	// --- Action Item Repo ---
 	actionItemRepo := postgres.NewSupabaseActionItemRepo(client)
+	collabRepo := postgres.NewSupabaseCollaborationRepo(client)
 
 	// --- AI Processor (Hits Modal serverless endpoint) ---
 	aiEndpoint := os.Getenv("MODAL_AI_ENDPOINT")
@@ -121,6 +120,7 @@ func main() {
 	aiHandler := apihttp.NewAIHandler(aiOutputRepo)
 
 	actionItemHandler := apihttp.NewActionItemHandler(actionItemRepo)
+	collaborationHandler := apihttp.NewCollaborationHandler(collabRepo)
 
 	// --- Router ---
 	r := chi.NewRouter()
@@ -148,6 +148,9 @@ func main() {
 				r.Get("/", handler.ListMeetings)
 				r.Get("/summaries", handler.ListMeetingSummaries)
 				r.Get("/{id}", handler.GetMeeting)
+				r.Get("/{meetingId}/action-items", actionItemHandler.ListByMeeting)
+				r.Post("/{meetingId}/invites", collaborationHandler.CreateMeetingInvites)
+				r.Get("/{meetingId}/invites", collaborationHandler.ListMeetingInvites)
 				r.Post("/{meetingId}/recordings/upload", transcriptionHandler.UploadRecording)
 				r.Post("/{meetingId}/transcription/start", liveHandler.StartSession)
 				r.Post("/{meetingId}/transcription/end", liveHandler.EndSession)
@@ -165,12 +168,25 @@ func main() {
 			r.Patch("/{id}/status", actionItemHandler.UpdateStatus)
 		})
 
+		r.Route("/teams", func(r chi.Router) {
+			r.Use(authMiddleware.Handle)
+			r.Post("/", collaborationHandler.CreateTeam)
+			r.Get("/", collaborationHandler.ListTeams)
+			r.Route("/{teamId}/channels", func(r chi.Router) {
+				r.Post("/", collaborationHandler.CreateChannel)
+				r.Get("/", collaborationHandler.ListChannels)
+			})
+			r.Route("/{teamId}/channels/{channelId}/messages", func(r chi.Router) {
+				r.Post("/", collaborationHandler.SendMessage)
+				r.Get("/", collaborationHandler.ListMessages)
+			})
+		})
+
 		r.Route("/jobs", func(r chi.Router) {
 			r.Get("/{jobId}", transcriptionHandler.GetJobStatus)
 			r.Get("/{jobId}/progress", transcriptionHandler.GetJobProgress)
 		})
 	})
-
 
 	// Public WebSocket endpoint (no auth middleware for now, or you can add ticket-based auth later)
 	r.Get("/api/v1/meetings/{meetingId}/transcription/ws", liveHandler.HandleWebSocket)

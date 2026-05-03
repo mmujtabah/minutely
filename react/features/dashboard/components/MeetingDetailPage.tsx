@@ -8,11 +8,24 @@ interface IProps {
 }
 
 const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
+    const formatElapsed = (seconds?: number) => {
+        if (seconds === undefined || Number.isNaN(seconds)) {
+            return '00:00';
+        }
+        const whole = Math.max(0, Math.floor(seconds));
+        const hours = Math.floor(whole / 3600);
+        const minutes = Math.floor((whole % 3600) / 60).toString().padStart(2, '0');
+        const secs = Math.floor(whole % 60).toString().padStart(2, '0');
+
+        return hours > 0 ? `${hours.toString().padStart(2, '0')}:${minutes}:${secs}` : `${minutes}:${secs}`;
+    };
+
     const [activeTab, setActiveTab] = useState<'summary' | 'transcript' | 'actionItems' | 'topics'>('summary');
     const [searchQuery, setSearchQuery] = useState('');
     const [meeting, setMeeting] = useState<any>(null);
     const [transcript, setTranscript] = useState<any>(null);
     const [insights, setInsights] = useState<any[]>([]);
+    const [dbActionItems, setDbActionItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -25,10 +38,11 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
                 const headers = { 'Authorization': `Bearer ${session.access_token}` };
 
                 // Fetch everything in parallel
-                const [meetingRes, transcriptRes, insightsRes] = await Promise.all([
+                const [meetingRes, transcriptRes, insightsRes, actionItemsRes] = await Promise.all([
                     fetch(`/api/v1/meetings/${meetingId}`, { headers }),
                     fetch(`/api/v1/meetings/${meetingId}/transcript`, { headers }),
-                    fetch(`/api/v1/meetings/${meetingId}/ai-insights`, { headers })
+                    fetch(`/api/v1/meetings/${meetingId}/ai-insights`, { headers }),
+                    fetch(`/api/v1/meetings/${meetingId}/action-items`, { headers })
                 ]);
 
                 if (meetingRes.ok) {
@@ -39,6 +53,9 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
                 }
                 if (insightsRes.ok) {
                     setInsights((await insightsRes.json()) || []);
+                }
+                if (actionItemsRes.ok) {
+                    setDbActionItems((await actionItemsRes.json()) || []);
                 }
             } catch (err) {
                 console.error("Failed to fetch meeting details:", err);
@@ -87,13 +104,27 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
         }
     }
     const topics = combinedOutput?.result?.topics || [];
-    const actionItems = combinedOutput?.result?.action_items || [];
+    const actionItems = dbActionItems.length > 0 ? dbActionItems : (combinedOutput?.result?.action_items || []);
     const participants = transcript?.participants || [];
 
     const filteredTranscript = transcript?.segments?.filter((seg: any) => 
         seg.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
         seg.speaker_name.toLowerCase().includes(searchQuery.toLowerCase())
     ) || [];
+
+    const meetingStatus = meeting.status?.toLowerCase();
+    const displayDate = meetingStatus === 'scheduled' ? meeting.scheduled_for || meeting.created_at : meeting.created_at;
+
+    const getStatusBadgeClasses = () => {
+        switch (meetingStatus) {
+            case 'scheduled':
+                return 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]';
+            case 'in_progress':
+                return 'bg-blue-50 text-blue-700 border-blue-200';
+            default:
+                return 'bg-green-50 text-green-700 border-green-200';
+        }
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -115,13 +146,13 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
                                     {meeting.source}
                                 </span>
                             )}
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border capitalize ${getStatusBadgeClasses()}`}>
                                 {meeting.status || 'Processed'}
                             </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm text-[#71717A]">
-                            <div className="flex items-center"><Calendar className="h-4 w-4 mr-2 text-[#A1A1AA]" /> {new Date(meeting.created_at).toLocaleDateString()}</div>
-                            <div className="flex items-center"><Clock className="h-4 w-4 mr-2 text-[#A1A1AA]" /> {transcript?.duration_secs ? Math.round(transcript.duration_secs / 60) : 0} min</div>
+                            <div className="flex items-center"><Calendar className="h-4 w-4 mr-2 text-[#A1A1AA]" /> {new Date(displayDate).toLocaleDateString()}</div>
+                            <div className="flex items-center"><Clock className="h-4 w-4 mr-2 text-[#A1A1AA]" /> {transcript?.duration_secs ? Math.round(transcript.duration_secs / 60) : (meetingStatus === 'scheduled' ? 'Not started' : 0)} {meetingStatus === 'scheduled' ? '' : 'min'}</div>
                             <div className="flex items-center"><Users className="h-4 w-4 mr-2 text-[#A1A1AA]" /> {participants.length} participants</div>
                         </div>
                     </div>
@@ -223,7 +254,7 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
                             {filteredTranscript.length > 0 ? filteredTranscript.map((line: any, i: number) => (
                                 <div key={i} className="flex group gap-6">
                                     <div className="w-16 pt-1 text-xs text-[#A1A1AA] font-mono shrink-0 text-right opacity-60 group-hover:opacity-100 transition-opacity">
-                                        {new Date((line.start_secs || 0) * 1000).toISOString().substr(14, 5)}
+                                        {formatElapsed(line.start_secs)}
                                     </div>
                                     <div className="flex-1 pb-4 border-b border-[#F4F4F5] group-last:border-0">
                                         <div className="text-sm font-bold text-[#18181B] mb-1.5 flex items-center">
@@ -247,21 +278,24 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
                         <h2 className="text-xl font-bold text-[#18181B] mb-4">Identified Tasks</h2>
                         {actionItems.length > 0 ? actionItems.map((item: any, i: number) => (
                             <div key={i} className="flex items-start p-5 bg-[#FAFAFA] border border-[#E4E4E7] rounded-xl hover:shadow-md transition-all group">
-                                <div className="mt-1 w-6 h-6 rounded-md border-2 border-[#D1D1D6] mr-5 flex-shrink-0 cursor-pointer hover:border-[#C01140] transition-colors group-hover:bg-white flex items-center justify-center">
-                                    {/* Checkmark icon could go here if completed */}
-                                </div>
                                 <div className="flex-1">
                                     <p className="text-[#18181B] font-medium text-lg mb-3 leading-snug">{item.task}</p>
                                     <div className="flex items-center gap-4">
                                         <div className="flex items-center bg-white border border-[#E4E4E7] px-2.5 py-1 rounded-full text-xs font-semibold text-[#71717A]">
                                             <span className="w-4 h-4 rounded-full bg-[#C01140] flex items-center justify-center mr-2 text-[10px] text-white">
-                                                {item.assignee?.charAt(0) || 'A'}
+                                                {(item.assignee_name || item.assignee || 'A').charAt(0)}
                                             </span>
-                                            {item.assignee || 'Assigned to team'}
+                                            {item.assignee_name || item.assignee || 'Assigned to team'}
                                         </div>
-                                        {item.due_date || item.deadline ? (
-                                            <span className="text-xs text-[#A1A1AA] font-medium">Due: {item.due_date || item.deadline}</span>
-                                        ) : null}
+                                        {item.status && (
+                                            <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${
+                                                item.status === 'done'
+                                                    ? 'text-green-700 bg-green-50 border-green-200'
+                                                    : 'text-[#71717A] bg-[#F4F4F5] border-[#E4E4E7]'
+                                            }`}>
+                                                {item.status === 'done' ? 'Done' : 'Open'}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>

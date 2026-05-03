@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Video, CheckSquare, UploadCloud, Settings, LogOut, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
+import { Home, Video, CheckSquare, UploadCloud, Settings, LogOut, ChevronLeft, ChevronRight, Menu, X, Users, MessageSquare } from 'lucide-react';
 import { supabase } from '../../supabase-auth/client';
 
 interface SidebarProps {
@@ -55,6 +55,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
                     <NavItem icon={Video} label="Meetings" id="meetings" activeTab={activeTab} setActiveTab={handleTabClick} isCollapsed={isCollapsed && !isMobileOpen} />
                     <NavItem icon={CheckSquare} label="Action Items" id="action-items" activeTab={activeTab} setActiveTab={handleTabClick} isCollapsed={isCollapsed && !isMobileOpen} />
                     <NavItem icon={UploadCloud} label="Recordings" id="recordings" activeTab={activeTab} setActiveTab={handleTabClick} isCollapsed={isCollapsed && !isMobileOpen} />
+                    <NavItem icon={Users} label="Teams" id="teams" activeTab={activeTab} setActiveTab={handleTabClick} isCollapsed={isCollapsed && !isMobileOpen} />
+                    <NavItem icon={MessageSquare} label="Team Chat" id="team-chat" activeTab={activeTab} setActiveTab={handleTabClick} isCollapsed={isCollapsed && !isMobileOpen} />
                 </nav>
             </div>
             

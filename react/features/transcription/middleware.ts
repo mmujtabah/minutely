@@ -34,6 +34,7 @@ const DEEPGRAM_WS_URL = [
 // Active WebSocket references
 let deepgramWs: WebSocket | null = null;
 let minutelyWs: WebSocket | null = null;
+let transcriptionStartedAtMs: number | null = null;
 
 // AudioWorklet node reference
 let audioWorkletNode: AudioWorkletNode | null = null;
@@ -86,6 +87,7 @@ async function startTranscriptionPipeline(store: any) {
         const data = await res.json();
         const sessionId = data.session_id;
         const deepgramToken = data.deepgram_token;
+        transcriptionStartedAtMs = Date.now();
 
         // 2. Connect to Minutely Go Hub (broadcast + persist)
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -125,6 +127,7 @@ function stopTranscriptionPipeline(store: any) {
         minutelyWs.close();
         minutelyWs = null;
     }
+    transcriptionStartedAtMs = null;
 
     // Notify backend to close live session + trigger AI pipeline
     const state = store.getState();
@@ -188,8 +191,10 @@ async function connectToDeepgram(store: any, token: string, meetingId: string) {
 
             const transcript = alt.transcript;
             const isFinal = msg.is_final;
-            const start = msg.start ?? 0;
-            const end = start + (msg.duration ?? 0);
+            const duration = msg.duration ?? 0;
+            const nowFromStart = transcriptionStartedAtMs ? (Date.now() - transcriptionStartedAtMs) / 1000 : (msg.start ?? 0);
+            const end = nowFromStart;
+            const start = Math.max(0, end - duration);
 
             const localParticipant = getLocalParticipant(store.getState());
 

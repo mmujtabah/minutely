@@ -166,12 +166,14 @@ const styles = (theme: Theme) => {
 
         outputContainer: {
             display: 'flex',
-            alignItems: 'flex-end',
+            flexDirection: 'column' as const,
+            alignItems: 'stretch',
             margin: `${theme.spacing(5)} 0`
         },
 
         outputButton: {
-            marginLeft: theme.spacing(3)
+            alignSelf: 'flex-start',
+            marginTop: theme.spacing(2)
         }
     };
 };

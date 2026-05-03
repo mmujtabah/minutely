@@ -9,13 +9,26 @@ interface IProps {
 
 const ActionItemsList: React.FC<IProps> = ({ items = [], loading = false }) => {
     const [actionItems, setActionItems] = useState<any[]>([]);
+    const isDone = (status?: string) => [ 'done', 'completed' ].includes((status || '').toLowerCase());
+    const isOpen = (status?: string) => [ 'open', 'pending' ].includes((status || '').toLowerCase());
+    const formatTaskDate = (item: any) => {
+        const createdAt = item?.created_at ? new Date(item.created_at) : null;
+        if (createdAt && !Number.isNaN(createdAt.getTime()) && createdAt.getFullYear() > 2000) {
+            return createdAt.toLocaleDateString();
+        }
+        const dueDate = item?.due_date ? new Date(item.due_date) : null;
+        if (dueDate && !Number.isNaN(dueDate.getTime())) {
+            return dueDate.toLocaleDateString();
+        }
+        return 'No date';
+    };
 
     useEffect(() => {
         setActionItems(items);
     }, [items]);
 
     const toggleStatus = async (id: string, currentStatus: string) => {
-        const newStatus = currentStatus === 'open' ? 'done' : 'open';
+        const newStatus = isDone(currentStatus) ? 'open' : 'done';
         
         // Optimistic UI update
         setActionItems(prev => prev.map(item => 
@@ -26,7 +39,7 @@ const ActionItemsList: React.FC<IProps> = ({ items = [], loading = false }) => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
 
-            await fetch(`/api/v1/action-items/${id}/status`, {
+            const res = await fetch(`/api/v1/action-items/${id}/status`, {
                 method: 'PATCH',
                 headers: { 
                     'Authorization': `Bearer ${session.access_token}`,
@@ -34,6 +47,15 @@ const ActionItemsList: React.FC<IProps> = ({ items = [], loading = false }) => {
                 },
                 body: JSON.stringify({ status: newStatus })
             });
+
+            if (!res.ok) {
+                throw new Error('Failed to persist status update');
+            }
+
+            const saved = await res.json();
+            setActionItems(prev => prev.map(item => 
+                item.id === id ? { ...item, status: saved.status } : item
+            ));
         } catch (err) {
             console.error("Failed to update status:", err);
             // Revert on error
@@ -49,7 +71,7 @@ const ActionItemsList: React.FC<IProps> = ({ items = [], loading = false }) => {
                 <h2 className="text-lg font-semibold text-[#18181B]">My Action Items</h2>
                 <div className="flex space-x-2">
                     <span className="bg-[#F4F4F5] text-[#18181B] text-xs font-medium px-2.5 py-1 rounded-lg">
-                        {actionItems.filter(i => i.status === 'open').length} Open
+                        {actionItems.filter(i => isOpen(i.status)).length} Open
                     </span>
                 </div>
             </div>
@@ -75,7 +97,7 @@ const ActionItemsList: React.FC<IProps> = ({ items = [], loading = false }) => {
                         <div className="h-16 w-16 bg-[#F4F4F5] rounded-full flex items-center justify-center mb-4">
                             <CheckSquare className="h-8 w-8 text-[#A1A1AA]" />
                         </div>
-                        <h3 className="text-[#18181B] font-medium text-lg mb-1">No action items</h3>
+                        <h3 className="text-[#18181B] font-medium text-lg mb-1">No tasks</h3>
                         <p className="text-[#71717A] text-sm max-w-sm">
                             You're all caught up! When Minutely detects tasks in your meetings, they will appear here.
                         </p>
@@ -87,7 +109,7 @@ const ActionItemsList: React.FC<IProps> = ({ items = [], loading = false }) => {
                                 onClick={() => toggleStatus(item.id, item.status)}
                                 className="mt-0.5 mr-4 focus:outline-none flex-shrink-0"
                             >
-                                {item.status === 'done' ? (
+                                {isDone(item.status) ? (
                                     <CheckCircle className="h-5 w-5 text-green-600" />
                                 ) : (
                                     <Circle className="h-5 w-5 text-[#A1A1AA] group-hover:text-[#C01140] transition-colors" />
@@ -95,7 +117,7 @@ const ActionItemsList: React.FC<IProps> = ({ items = [], loading = false }) => {
                             </button>
                             
                             <div className="flex-1">
-                                <p className={`text-sm font-medium ${item.status === 'done' ? 'text-[#A1A1AA] line-through' : 'text-[#18181B]'}`}>
+                                <p className={`text-sm font-medium ${isDone(item.status) ? 'text-[#A1A1AA] line-through' : 'text-[#18181B]'}`}>
                                     {item.task}
                                 </p>
                                 
@@ -110,7 +132,7 @@ const ActionItemsList: React.FC<IProps> = ({ items = [], loading = false }) => {
                                     )}
                                     <div className="flex items-center">
                                         <Calendar className="mr-1 h-3.5 w-3.5" />
-                                        {new Date(item.created_at).toLocaleDateString()}
+                                        {formatTaskDate(item)}
                                     </div>
                                 </div>
                             </div>

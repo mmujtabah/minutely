@@ -33,6 +33,7 @@ type ActionItemRepository interface {
 	Create(ctx context.Context, item *ActionItem) error
 	GetByID(ctx context.Context, id uuid.UUID) (*ActionItem, error)
 	ListByMeetingID(ctx context.Context, meetingID uuid.UUID) ([]*ActionItem, error)
+	ListForUser(ctx context.Context, userID uuid.UUID) ([]*ActionItem, error)
 	ListOpenForUser(ctx context.Context, userID uuid.UUID) ([]*ActionItem, error)
 	Update(ctx context.Context, item *ActionItem) error
 }

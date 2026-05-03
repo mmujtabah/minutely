@@ -6,9 +6,20 @@ interface IProps {
     loading?: boolean;
     onViewAll?: () => void;
     onMeetingClick?: (id: string | number) => void;
+    title?: string;
+    emptyTitle?: string;
+    emptyDescription?: string;
 }
 
-const RecentMeetingsGrid: React.FC<IProps> = ({ meetings = [], loading = false, onViewAll, onMeetingClick }) => {
+const RecentMeetingsGrid: React.FC<IProps> = ({
+    meetings = [],
+    loading = false,
+    onViewAll,
+    onMeetingClick,
+    title,
+    emptyTitle = 'No meetings yet',
+    emptyDescription = "You haven't recorded or uploaded any meetings. Start a new meeting to generate insights."
+}) => {
     const isAllMeetingsMode = !onViewAll;
     const [searchQuery, setSearchQuery] = useState('');
     const [visibleCount, setVisibleCount] = useState(20);
@@ -37,7 +48,7 @@ const RecentMeetingsGrid: React.FC<IProps> = ({ meetings = [], loading = false, 
         <div className="bg-[#FFFFFF] border border-[#E4E4E7] rounded-xl overflow-hidden shadow-sm">
             <div className="p-6 border-b border-[#E4E4E7] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-lg font-semibold text-[#18181B]">
-                    {isAllMeetingsMode ? 'All Meetings' : 'Recent Meetings'}
+                    {title || (isAllMeetingsMode ? 'All Meetings' : 'Recent Meetings')}
                 </h2>
                 
                 {isAllMeetingsMode ? (
@@ -86,12 +97,12 @@ const RecentMeetingsGrid: React.FC<IProps> = ({ meetings = [], loading = false, 
                             <MessageSquare className="h-8 w-8 text-[#A1A1AA]" />
                         </div>
                         <h3 className="text-[#18181B] font-medium text-lg mb-1">
-                            {searchQuery ? 'No matching meetings' : 'No meetings yet'}
+                            {searchQuery ? 'No matching meetings' : emptyTitle}
                         </h3>
                         <p className="text-[#71717A] text-sm max-w-sm mb-6">
                             {searchQuery 
                                 ? 'Try adjusting your search terms.' 
-                                : "You haven't recorded or uploaded any meetings. Start a new meeting to generate insights."}
+                                : emptyDescription}
                         </p>
                     </div>
                 ) : (
@@ -159,4 +170,3 @@ const RecentMeetingsGrid: React.FC<IProps> = ({ meetings = [], loading = false, 
 };
 
 export default RecentMeetingsGrid;
-

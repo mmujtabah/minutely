@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/MinutelyAI/minutely-api/internal/core/domain"
+	"github.com/google/uuid"
 )
 
 // SegmentMessage represents a partial or final transcript segment
@@ -40,6 +40,7 @@ type Hub struct {
 	mu sync.RWMutex
 
 	transcriptRepo domain.TranscriptRepository
+	sessionStarts  map[uuid.UUID]time.Time
 }
 
 func NewHub(transcriptRepo domain.TranscriptRepository) *Hub {
@@ -49,6 +50,7 @@ func NewHub(transcriptRepo domain.TranscriptRepository) *Hub {
 		unregister:     make(chan *Client),
 		clients:        make(map[uuid.UUID]map[*Client]bool),
 		transcriptRepo: transcriptRepo,
+		sessionStarts:  make(map[uuid.UUID]time.Time),
 	}
 }
 
@@ -83,6 +85,8 @@ func (h *Hub) Run(ctx context.Context) {
 			log.Printf("Client unregistered from meeting %s", client.MeetingID)
 
 		case message := <-h.broadcast:
+			h.normalizeSegmentTimestamps(message)
+
 			// 1. Broadcast to all other clients in the same meeting
 			h.mu.RLock()
 			for client := range h.clients[message.MeetingID] {
@@ -100,6 +104,32 @@ func (h *Hub) Run(ctx context.Context) {
 				h.persistSegment(message)
 			}
 		}
+	}
+}
+
+func (h *Hub) normalizeSegmentTimestamps(msg *SegmentMessage) {
+	sessionStart, ok := h.sessionStarts[msg.MeetingID]
+	if !ok {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		session, err := h.transcriptRepo.GetLiveSessionByMeetingID(ctx, msg.MeetingID)
+		if err != nil || session == nil {
+			return
+		}
+		sessionStart = session.StartedAt
+		h.sessionStarts[msg.MeetingID] = sessionStart
+	}
+
+	nowElapsed := time.Since(sessionStart).Seconds()
+	duration := msg.EndSecs - msg.StartSecs
+	if duration < 0 {
+		duration = 0
+	}
+
+	msg.EndSecs = nowElapsed
+	msg.StartSecs = nowElapsed - duration
+	if msg.StartSecs < 0 {
+		msg.StartSecs = 0
 	}
 }
 
