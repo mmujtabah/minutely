@@ -74,13 +74,20 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
     }
 
     // Extract data from insights
-    const summaryOutput = insights.find(i => i.output_type === 'summary');
-    const topicsOutput = insights.find(i => i.output_type === 'key_topics');
-    const actionItemsOutput = insights.find(i => i.output_type === 'action_items');
-
-    const summary = summaryOutput?.result?.summary || meeting.summary || "No executive summary available for this meeting yet.";
-    const topics = topicsOutput?.result?.topics || [];
-    const actionItems = actionItemsOutput?.result?.items || [];
+    // The backend saves all AI results (summary, topics, action items) into a single 'summary' output record
+    const combinedOutput = insights.find(i => i.output_type === 'summary');
+    
+    let summary = combinedOutput?.result?.executive_summary || meeting.summary;
+    if (!summary || summary === "") {
+        // Fallback to reconstruct from transcript if available
+        if (transcript?.segments?.length > 0) {
+            summary = transcript.segments.slice(0, 3).map((s: any) => s.text).join(' ') + "...";
+        } else {
+            summary = "No executive summary available for this meeting yet.";
+        }
+    }
+    const topics = combinedOutput?.result?.topics || [];
+    const actionItems = combinedOutput?.result?.action_items || [];
     const participants = transcript?.participants || [];
 
     const filteredTranscript = transcript?.segments?.filter((seg: any) => 
@@ -167,7 +174,7 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
                                     {topics.length > 0 ? topics.map((topic: string, i: number) => (
                                         <li key={i} className="flex items-start text-[#3F3F46]">
                                             <div className="h-2 w-2 rounded-full bg-[#C01140] mt-2 mr-4 shrink-0" />
-                                            <span className="text-md">{topic}</span>
+                                            <span className="text-md">{typeof topic === 'string' ? topic : (topic as any).title || "Topic"}</span>
                                         </li>
                                     )) : (
                                         <li className="text-[#A1A1AA] italic">Topics are being extracted...</li>
@@ -216,7 +223,7 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
                             {filteredTranscript.length > 0 ? filteredTranscript.map((line: any, i: number) => (
                                 <div key={i} className="flex group gap-6">
                                     <div className="w-16 pt-1 text-xs text-[#A1A1AA] font-mono shrink-0 text-right opacity-60 group-hover:opacity-100 transition-opacity">
-                                        {new Date(line.start_time * 1000).toISOString().substr(14, 5)}
+                                        {new Date((line.start_secs || 0) * 1000).toISOString().substr(14, 5)}
                                     </div>
                                     <div className="flex-1 pb-4 border-b border-[#F4F4F5] group-last:border-0">
                                         <div className="text-sm font-bold text-[#18181B] mb-1.5 flex items-center">
@@ -252,9 +259,9 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
                                             </span>
                                             {item.assignee || 'Assigned to team'}
                                         </div>
-                                        {item.due_date && (
-                                            <span className="text-xs text-[#A1A1AA] font-medium">Due: {item.due_date}</span>
-                                        )}
+                                        {item.due_date || item.deadline ? (
+                                            <span className="text-xs text-[#A1A1AA] font-medium">Due: {item.due_date || item.deadline}</span>
+                                        ) : null}
                                     </div>
                                 </div>
                             </div>
@@ -272,8 +279,8 @@ const MeetingDetailPage: React.FC<IProps> = ({ meetingId, onBack }) => {
                             {topics.map((topic: string, i: number) => (
                                 <div key={i} className="p-6 bg-white border border-[#E4E4E7] rounded-xl shadow-sm hover:border-[#C01140] transition-all group">
                                     <div className="text-[#C01140] font-bold text-2xl mb-2 opacity-10 group-hover:opacity-30 transition-opacity">0{i+1}</div>
-                                    <h3 className="font-bold text-[#18181B] text-lg mb-2">{topic}</h3>
-                                    <p className="text-sm text-[#71717A]">AI extracted topic with detailed context from the meeting discussion.</p>
+                                    <h3 className="font-bold text-[#18181B] text-lg mb-2">{typeof topic === 'string' ? topic : (topic as any).title}</h3>
+                                    <p className="text-sm text-[#71717A]">{typeof topic === 'string' ? "AI extracted topic with detailed context." : (topic as any).summary}</p>
                                 </div>
                             ))}
                         </div>

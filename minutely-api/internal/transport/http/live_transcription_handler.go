@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/MinutelyAI/minutely-api/internal/core/domain"
+	"github.com/MinutelyAI/minutely-api/internal/transport/http/middleware"
 	"github.com/MinutelyAI/minutely-api/internal/transport/ws"
 )
 
@@ -33,10 +34,20 @@ func (h *LiveTranscriptionHandler) parseOrGenerateMeetingID(r *http.Request) uui
 	if err != nil {
 		// It's a Jitsi string name, generate a deterministic UUID
 		meetingID = uuid.NewMD5(uuid.NameSpaceURL, []byte(meetingIDStr))
+
+		// Try to extract userID from context (if route is authenticated)
+		var userIDPtr *uuid.UUID
+		if val := r.Context().Value(middleware.UserIDKey); val != nil {
+			if uid, ok := val.(uuid.UUID); ok {
+				userIDPtr = &uid
+			}
+		}
+
 		// Lazily create a dummy meeting if it doesn't exist so foreign keys don't fail
 		_, _ = h.meetingService.GetMeeting(r.Context(), meetingID)
 		err = h.meetingService.CreateMeeting(r.Context(), &domain.Meeting{
 			ID:        meetingID,
+			UserID:    userIDPtr,
 			Title:     meetingIDStr,
 			Status:    domain.MeetingStatusInProgress,
 			CreatedAt: time.Now(),

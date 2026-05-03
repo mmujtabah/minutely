@@ -87,6 +87,11 @@ func (s *transcriptionService) EndLiveSession(ctx context.Context, meetingID uui
 		if err == nil {
 			transcript.Status = domain.TranscriptStatusCompleted
 			transcript.CompletedAt = &now
+			
+			// Calculate duration
+			duration := now.Sub(session.StartedAt).Seconds()
+			transcript.DurationSecs = &duration
+			
 			_ = s.repo.Update(ctx, transcript)
 		}
 	}

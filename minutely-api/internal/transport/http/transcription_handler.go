@@ -43,9 +43,19 @@ func (h *TranscriptionHandler) parseOrGenerateMeetingID(r *http.Request) uuid.UU
 	meetingID, err := uuid.Parse(meetingIDStr)
 	if err != nil {
 		meetingID = uuid.NewMD5(uuid.NameSpaceURL, []byte(meetingIDStr))
+		
+		// Try to extract userID from context (if route is authenticated)
+		var userIDPtr *uuid.UUID
+		if val := r.Context().Value(middleware.UserIDKey); val != nil {
+			if uid, ok := val.(uuid.UUID); ok {
+				userIDPtr = &uid
+			}
+		}
+
 		_, _ = h.meetingService.GetMeeting(r.Context(), meetingID)
 		err = h.meetingService.CreateMeeting(r.Context(), &domain.Meeting{
 			ID:        meetingID,
+			UserID:    userIDPtr,
 			Title:     meetingIDStr,
 			Status:    domain.MeetingStatusInProgress,
 			CreatedAt: time.Now(),
@@ -61,7 +71,11 @@ func (h *TranscriptionHandler) parseOrGenerateMeetingID(r *http.Request) uuid.UU
 // UploadRecording accepts a multipart file upload, stores it, and enqueues a transcription job.
 // POST /api/v1/meetings/{meetingId}/recordings/upload
 func (h *TranscriptionHandler) UploadRecording(w http.ResponseWriter, r *http.Request) {
-	_ = r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+	// Safely get UserID
+	var userID uuid.UUID
+	if val := r.Context().Value(middleware.UserIDKey); val != nil {
+		userID = val.(uuid.UUID)
+	}
 
 	meetingID := h.parseOrGenerateMeetingID(r)
 
@@ -109,6 +123,11 @@ func (h *TranscriptionHandler) UploadRecording(w http.ResponseWriter, r *http.Re
 		SizeBytes:    &size,
 		Status:       domain.MediaStatusUploaded,
 	}
+
+	if userID != uuid.Nil {
+		mediaFile.UploadedBy = &userID
+	}
+
 	if err := h.jobRepo.CreateMediaFile(r.Context(), mediaFile); err != nil {
 		jsonError(w, "failed to record media file: "+err.Error(), http.StatusInternalServerError)
 		return

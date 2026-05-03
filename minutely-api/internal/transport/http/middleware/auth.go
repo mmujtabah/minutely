@@ -11,6 +11,9 @@ import (
 
 type contextKey string
 const UserIDKey contextKey = "user_id"
+const UserKey contextKey = "user"
+const UserNameKey contextKey = "user_name"
+const UserEmailKey contextKey = "user_email"
 
 type SupabaseAuth struct {
 	client *supabase.Client
@@ -50,6 +53,28 @@ func (m *SupabaseAuth) Handle(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
+		ctx = context.WithValue(ctx, UserKey, user)
+		
+		// Extract name from metadata if possible
+		name := ""
+		if user.UserMetadata != nil {
+			if n, ok := user.UserMetadata["full_name"].(string); ok {
+				name = n
+			} else if n, ok := user.UserMetadata["name"].(string); ok {
+				name = n
+			}
+		}
+		if name == "" {
+			// Fallback to email prefix
+			if user.Email != "" {
+				name = strings.Split(user.Email, "@")[0]
+			} else {
+				name = "User"
+			}
+		}
+		ctx = context.WithValue(ctx, UserNameKey, name)
+		ctx = context.WithValue(ctx, UserEmailKey, user.Email)
+
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

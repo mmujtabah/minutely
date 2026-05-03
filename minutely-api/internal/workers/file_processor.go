@@ -321,8 +321,16 @@ func (p *FileProcessor) processAIJob(ctx context.Context, job *domain.Processing
 	}
 
 	fullText := ""
-	if transcript.FullText != nil {
+	if transcript.FullText != nil && *transcript.FullText != "" {
 		fullText = *transcript.FullText
+	} else if len(segments) > 0 {
+		// Reconstruct from segments if FullText is missing (common for live sessions)
+		for i, seg := range segments {
+			if i > 0 {
+				fullText += " "
+			}
+			fullText += seg.Text
+		}
 	}
 	
 	durationSecs := 0.0
