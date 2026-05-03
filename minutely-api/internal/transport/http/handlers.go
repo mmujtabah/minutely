@@ -33,6 +33,13 @@ func (h *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// If name is missing in DB, use the one from context (from auth metadata)
+	if profile.FullName == nil || *profile.FullName == "" || *profile.FullName == "User" {
+		if name, ok := r.Context().Value(middleware.UserNameKey).(string); ok {
+			profile.FullName = &name
+		}
+	}
+
 	json.NewEncoder(w).Encode(profile)
 }
 

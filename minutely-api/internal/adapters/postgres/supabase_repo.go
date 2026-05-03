@@ -37,6 +37,11 @@ func (r *supabaseProfileRepo) GetByID(ctx context.Context, id uuid.UUID) (*domai
 	return &profile, nil
 }
 
+func (r *supabaseProfileRepo) Create(ctx context.Context, profile *domain.Profile) error {
+	_, _, err := r.client.From("profiles").Insert(profile, false, "exact", "representation", "id").Execute()
+	return err
+}
+
 func (r *supabaseProfileRepo) Update(ctx context.Context, profile *domain.Profile) error {
 	_, _, err := r.client.From("profiles").Update(profile, "exact", "id").Eq("id", profile.ID.String()).Execute()
 	return err

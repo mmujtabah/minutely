@@ -1,6 +1,7 @@
 import MiddlewareRegistry from '../base/redux/MiddlewareRegistry';
 import { getCurrentConference } from '../base/conference/functions';
 import { getLocalParticipant } from '../base/participants/functions';
+import { supabase } from '../supabase-auth/client';
 import {
     START_TRANSCRIPTION,
     STOP_TRANSCRIPTION,
@@ -67,9 +68,15 @@ async function startTranscriptionPipeline(store: any) {
 
     try {
         // 1. Obtain session + Deepgram token from Go backend
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
         const res = await fetch(`/api/v1/meetings/${meetingId}/transcription/start`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers
         });
 
         if (!res.ok) {
@@ -124,9 +131,20 @@ function stopTranscriptionPipeline(store: any) {
     const conference = getCurrentConference(state);
     if (conference) {
         const meetingId = conference.getName();
-        fetch(`/api/v1/meetings/${meetingId}/transcription/end`, {
-            method: 'POST',
-        }).catch(err => console.error('[Minutely Transcription] Failed to end session:', err));
+        
+        // Notify backend to close live session + trigger AI pipeline
+        (async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: Record<string, string> = {};
+            if (session) {
+                headers['Authorization'] = `Bearer ${session.access_token}`;
+            }
+
+            fetch(`/api/v1/meetings/${meetingId}/transcription/end`, {
+                method: 'POST',
+                headers
+            }).catch(err => console.error('[Minutely Transcription] Failed to end session:', err));
+        })();
     }
 
     store.dispatch(transcriptionStopped());

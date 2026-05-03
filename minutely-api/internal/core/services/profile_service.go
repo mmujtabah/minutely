@@ -16,7 +16,19 @@ func NewProfileService(repo domain.ProfileRepository) domain.ProfileService {
 }
 
 func (s *profileService) GetProfile(ctx context.Context, id uuid.UUID) (*domain.Profile, error) {
-	return s.repo.GetByID(ctx, id)
+	profile, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		// If profile not found, create a default one (lazy creation)
+		// This handles cases where the profiles table was reset but the auth user still exists
+		newProfile := &domain.Profile{
+			ID: id,
+		}
+		if err := s.repo.Create(ctx, newProfile); err != nil {
+			return nil, err
+		}
+		return newProfile, nil
+	}
+	return profile, nil
 }
 
 func (s *profileService) UpdateProfile(ctx context.Context, profile *domain.Profile) error {

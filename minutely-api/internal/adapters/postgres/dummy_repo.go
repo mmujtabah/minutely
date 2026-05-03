@@ -19,6 +19,10 @@ func (r *dummyProfileRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.P
 	return &domain.Profile{ID: id, FullName: &name}, nil
 }
 
+func (r *dummyProfileRepo) Create(ctx context.Context, profile *domain.Profile) error {
+	return nil
+}
+
 func (r *dummyProfileRepo) Update(ctx context.Context, profile *domain.Profile) error {
 	return nil
 }

@@ -19,6 +19,7 @@ type Profile struct {
 // ProfileRepository defines datastore interactions for profiles
 type ProfileRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*Profile, error)
+	Create(ctx context.Context, profile *Profile) error
 	Update(ctx context.Context, profile *Profile) error
 }
 

@@ -140,9 +140,6 @@ func main() {
 			// Public routes
 			r.Get("/{meetingId}/transcript", transcriptionHandler.GetMeetingTranscript)
 			r.Get("/{meetingId}/ai-insights", aiHandler.GetMeetingInsights)
-			r.Post("/{meetingId}/recordings/upload", transcriptionHandler.UploadRecording)
-			r.Post("/{meetingId}/transcription/start", liveHandler.StartSession)
-			r.Post("/{meetingId}/transcription/end", liveHandler.EndSession)
 
 			// Authenticated routes
 			r.Group(func(r chi.Router) {
@@ -151,6 +148,9 @@ func main() {
 				r.Get("/", handler.ListMeetings)
 				r.Get("/summaries", handler.ListMeetingSummaries)
 				r.Get("/{id}", handler.GetMeeting)
+				r.Post("/{meetingId}/recordings/upload", transcriptionHandler.UploadRecording)
+				r.Post("/{meetingId}/transcription/start", liveHandler.StartSession)
+				r.Post("/{meetingId}/transcription/end", liveHandler.EndSession)
 			})
 		})
 
