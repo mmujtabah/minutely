@@ -42,6 +42,22 @@ export const useDashboardData = () => {
     
     useEffect(() => {
         void refresh();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session) {
+                void refresh();
+            } else {
+                setState({
+                    meetings: [],
+                    stats: null,
+                    actionItems: [],
+                    loading: false,
+                    error: 'No active session'
+                });
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
     
     return {

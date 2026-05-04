@@ -14,27 +14,25 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     const dispatch = useDispatch();
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                setSession(session);
+        const syncSession = (nextSession: any) => {
+            setSession(nextSession);
+
+            if (nextSession?.user?.email) {
                 dispatch(updateSettings({
-                    displayName: session.user.email.split('@')[0],
-                    email: session.user.email
+                    displayName: nextSession.user.email.split('@')[0],
+                    email: nextSession.user.email
                 }));
             }
+
             setLoading(false);
+        };
+
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            syncSession(session);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session) {
-                setSession(session);
-                dispatch(updateSettings({
-                    displayName: session.user.email.split('@')[0],
-                    email: session.user.email
-                }));
-            } else {
-                setSession(null);
-            }
+            syncSession(session);
         });
 
         return () => subscription.unsubscribe();
@@ -49,7 +47,7 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     }
 
     if (!session) {
-        return <Auth onLoginSuccess={() => setSession(true)} />;
+        return <Auth />;
     }
 
     return <>{children}</>;

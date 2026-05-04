@@ -14,23 +14,51 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
     const [userProfile, setUserProfile] = useState<any>(null);
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        const getFallbackProfile = (session: any) => {
+            const fullName = session?.user?.user_metadata?.full_name
+                || session?.user?.user_metadata?.name
+                || session?.user?.email?.split('@')[0]
+                || 'User';
+
+            return {
+                full_name: fullName,
+                email: session?.user?.email || ''
+            };
+        };
+
+        const syncProfile = async (session: any) => {
+            if (!session) {
+                setUserProfile(null);
+                return;
+            }
+
+            setUserProfile(getFallbackProfile(session));
+
             try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) return;
-                
                 const res = await fetch('/api/v1/users/me', {
                     headers: { 'Authorization': `Bearer ${session.access_token}` }
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    setUserProfile(data);
+                    setUserProfile({
+                        ...getFallbackProfile(session),
+                        ...data
+                    });
                 }
             } catch (err) {
                 console.error("Failed to fetch profile:", err);
             }
         };
-        fetchProfile();
+
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            void syncProfile(session);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            void syncProfile(session);
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     // Helper to close mobile menu on tab switch
